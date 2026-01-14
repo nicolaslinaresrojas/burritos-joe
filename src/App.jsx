@@ -156,8 +156,8 @@ function App() {
       <header className="mb-6 text-center">
         <h1 className="text-4xl font-extrabold text-red-700 tracking-wider">BURRITOS JOE</h1>
         <p className="text-gray-500 font-medium">
-          Estado Impresora: <span className={impresoraConectada ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-            {impresoraConectada ? "CONNECTED ✅" : "DISCONNECTE ❌"}
+          Printer Status: <span className={impresoraConectada ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+            {impresoraConectada ? "CONNECTED ✅" : "DISCONNECTED ❌"}
           </span>
         </p>
       </header>
@@ -176,7 +176,7 @@ function App() {
 
         <div className="bg-white p-6 rounded-xl shadow-lg h-fit flex flex-col">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex justify-between">
-            Orden Actual <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length}</span>
+            Current Order <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length}</span>
           </h2>
           <div className="flex-1 min-h-[300px] max-h-[500px] overflow-y-auto space-y-3 mb-4">
              {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Empty Order</div>}
