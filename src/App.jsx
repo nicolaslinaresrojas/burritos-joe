@@ -59,10 +59,10 @@ function App() {
       qz.websocket.connect()
         .then(() => {
           setImpresoraConectada(true);
-          console.log("Conectado a QZ Tray exitosamente");
+          console.log("Connected to QZ Tray");
         })
         .catch((e) => {
-          console.error("Error conectando a QZ Tray:", e);
+          console.error("Connection Error:", e);
           setImpresoraConectada(false);
         });
     }
@@ -80,17 +80,17 @@ function App() {
 ^PW812
 ^MNN
 ^LL600
-^FX --- CABECERA ---
+^FX --- HEADER ---
 ^FO0,0^GB812,120,80^FS
 ^FO0,30^A0N,60,60^FB812,1,0,C^FR^FD BURRITOS JOE ^FS
 ^FX --- INFO ---
 ^FO20,140^A0N,28,28^FDTime: ${fecha}^FS
 ^FO550,140^A0N,28,28^FDItem ${indice} of ${total}^FS
 ^FO20,170^GB772,2,2^FS
-^FX --- PRODUCTO ---
+^FX --- PRODUCT ---
 ^FO20,200^A0N,70,70^FB772,1,0,C^FD${item.producto.toUpperCase()}^FS
 ^FO20,270^A0N,40,40^FB772,1,0,C^FD(${item.size})^FS
-^FX --- DETALLES ---
+^FX --- DETAILS ---
 ^FO20,330^GB772,250,2^FS
 ^FO40,350^A0N,30,30^FDFILLING:^FS
 ^FO250,350^A0N,30,30^FD${item.filling}^FS
@@ -105,8 +105,8 @@ function App() {
 
   // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
   const manejarImpresion = async () => {
-    if (orden.length === 0) return alert("No hay nada en la orden!");
-    if (!impresoraConectada) return alert("ERROR: No se detecta QZ Tray. Asegúrate de tener el programa abierto en el PC.");
+    if (orden.length === 0) return alert("Order is empty!");
+    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected. Make sure the software is running on the PC.");
 
     try {
       // a. Buscar la impresora Zebra
@@ -124,11 +124,11 @@ function App() {
       // b. Enviar a imprimir
       await qz.print(config, datosAImprimir);
       
-      alert("¡Enviado a la impresora correctamente!");
+      alert("Sent to printer successfully! 🖨️");
       setOrden([]); // Limpiar orden después de imprimir
     } catch (err) {
       console.error(err);
-      alert("Error al imprimir: " + err.message);
+      alert("Print Error: " + err.message);
     }
   }
 
@@ -157,7 +157,7 @@ function App() {
         <h1 className="text-4xl font-extrabold text-red-700 tracking-wider">BURRITOS JOE</h1>
         <p className="text-gray-500 font-medium">
           Estado Impresora: <span className={impresoraConectada ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-            {impresoraConectada ? "CONECTADA ✅" : "DESCONECTADA ❌"}
+            {impresoraConectada ? "CONNECTED ✅" : "DISCONNECTE ❌"}
           </span>
         </p>
       </header>
@@ -179,7 +179,7 @@ function App() {
             Orden Actual <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length}</span>
           </h2>
           <div className="flex-1 min-h-[300px] max-h-[500px] overflow-y-auto space-y-3 mb-4">
-             {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Orden Vacía</div>}
+             {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Empty Order</div>}
              {orden.map((item) => (
                 <div key={item.id} className="border p-3 rounded bg-gray-50 relative">
                   <button onClick={() => eliminarItem(item.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 font-bold">X</button>
@@ -188,7 +188,7 @@ function App() {
                 </div>
              ))}
           </div>
-          <button onClick={manejarImpresion} className="w-full bg-gray-900 text-white font-bold py-4 rounded-lg text-xl hover:bg-black transition shadow-lg">IMPRIMIR 🖨️</button>
+          <button onClick={manejarImpresion} className="w-full bg-gray-900 text-white font-bold py-4 rounded-lg text-xl hover:bg-black transition shadow-lg">PRINT ORDER 🖨️</button>
         </div>
       </div>
 
@@ -204,8 +204,8 @@ function App() {
                 <div><p className="font-bold">Toppings:</p> <div className="grid grid-cols-3 gap-2">{INGREDIENTES.toppings.map(t => <button key={t} onClick={() => toggleTopping(t)} className={`p-2 text-xs border rounded ${seleccion.toppings.includes(t) ? 'bg-blue-100 border-blue-500' : ''}`}>{t}</button>)}</div></div>
             </div>
             <div className="mt-6 flex gap-4">
-                <button onClick={() => setModalAbierto(false)} className="flex-1 py-3 bg-gray-200 rounded font-bold">Cancelar</button>
-                <button onClick={agregarAOrden} className="flex-1 py-3 bg-green-600 text-white rounded font-bold">Agregar</button>
+                <button onClick={() => setModalAbierto(false)} className="flex-1 py-3 bg-gray-200 rounded font-bold">Cancel</button>
+                <button onClick={agregarAOrden} className="flex-1 py-3 bg-green-600 text-white rounded font-bold">Add to Order</button>
             </div>
           </div>
         </div>
