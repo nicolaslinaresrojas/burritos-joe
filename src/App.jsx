@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import qz from 'qz-tray';
 
-// --- CONFIGURACIÓN DEL MENÚ ---
-const INGREDIENTES = {
+// --- MENU CONFIGURATION ---
+const INGREDIENTS = {
   sizes: ["Large", "Small"],
   fillings: [
     "Chicken", "Chicken & Chorizo", "Chicken Tinga", "Pulled Pork",
@@ -26,9 +26,9 @@ function App() {
     toppings: []
   })
 
-  // --- 1. INICIAR CONEXIÓN CON QZ TRAY AL CARGAR LA PÁGINA ---
+  // --- 1. CONNECT TO QZ TRAY ON LOAD ---
   useEffect(() => {
-    // Certificado de prueba para desarrollo (Evita errores de seguridad local)
+    // Development certificate to avoid local security errors
     qz.security.setCertificatePromise((resolve, reject) => {
       resolve("-----BEGIN CERTIFICATE-----\n" +
         "MIIDatCCAlOgAwIBAgIUBzkS+l0i5iJ0xJbQ2f5s0W5c5B0wDQYJKoZIhvcNAQEL\n" +
@@ -46,7 +46,6 @@ function App() {
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
-        "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "-----END CERTIFICATE-----");
     });
 
@@ -54,43 +53,44 @@ function App() {
         return function(resolve, reject) { resolve(); };
     });
 
-    // Conectar con el software QZ Tray local
+    // Connect to local QZ Tray software
     if (!qz.websocket.isActive()) {
       qz.websocket.connect()
         .then(() => {
           setImpresoraConectada(true);
-          console.log("Conectado a QZ Tray exitosamente");
+          console.log("Connected to QZ Tray successfully");
         })
         .catch((e) => {
-          console.error("Error conectando a QZ Tray:", e);
+          console.error("Error connecting to QZ Tray:", e);
           setImpresoraConectada(false);
         });
     }
   }, []);
 
 
-  // --- 2. GENERADOR DE CÓDIGO ZPL ---
+  // --- 2. ZPL GENERATOR (LABEL DESIGN) ---
   const generarZPL = (item, indice, total) => {
     const toppings = item.toppings.length > 0 ? item.toppings.join(", ") : "N/A";
+    // UK Date format for London
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-    // ZPL para Zebra ZD230 (Ancho 812 dots)
+    // ZPL for Zebra ZD230 (Width 812 dots)
     return `
 ^XA
 ^PW812
 ^MNN
 ^LL600
-^FX --- CABECERA ---
+^FX --- HEADER ---
 ^FO0,0^GB812,120,80^FS
 ^FO0,30^A0N,60,60^FB812,1,0,C^FR^FD BURRITOS JOE ^FS
 ^FX --- INFO ---
 ^FO20,140^A0N,28,28^FDTime: ${fecha}^FS
 ^FO550,140^A0N,28,28^FDItem ${indice} of ${total}^FS
 ^FO20,170^GB772,2,2^FS
-^FX --- PRODUCTO ---
+^FX --- PRODUCT ---
 ^FO20,200^A0N,70,70^FB772,1,0,C^FD${item.producto.toUpperCase()}^FS
 ^FO20,270^A0N,40,40^FB772,1,0,C^FD(${item.size})^FS
-^FX --- DETALLES ---
+^FX --- DETAILS ---
 ^FO20,330^GB772,250,2^FS
 ^FO40,350^A0N,30,30^FDFILLING:^FS
 ^FO250,350^A0N,30,30^FD${item.filling}^FS
@@ -103,17 +103,16 @@ function App() {
 ^XZ`;
   }
 
-  // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
+  // --- 3. PRINTING FUNCTION ---
   const manejarImpresion = async () => {
-    if (orden.length === 0) return alert("No hay nada en la orden!");
-    if (!impresoraConectada) return alert("ERROR: No se detecta QZ Tray. Asegúrate de tener el programa abierto en el PC.");
+    if (orden.length === 0) return alert("Order is empty!");
+    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected. Make sure the software is running on the PC.");
 
     try {
-      // a. Buscar la impresora Zebra
-      // Nota: Busca cualquier impresora que tenga "Zebra" en el nombre
+      // a. Find Zebra Printer
       const printers = await qz.printers.find("Zebra"); 
       
-      // Si no encuentra una que diga "Zebra", usa la predeterminada del sistema
+      // Use default if specific Zebra not found (fallback)
       const config = qz.configs.create(printers || null); 
 
       const datosAImprimir = [];
@@ -121,18 +120,18 @@ function App() {
         datosAImprimir.push(generarZPL(item, index + 1, orden.length));
       });
 
-      // b. Enviar a imprimir
+      // b. Send to printer
       await qz.print(config, datosAImprimir);
       
-      alert("¡Enviado a la impresora correctamente!");
-      setOrden([]); // Limpiar orden después de imprimir
+      alert("Sent to printer successfully!");
+      setOrden([]); // Clear order after printing
     } catch (err) {
       console.error(err);
-      alert("Error al imprimir: " + err.message);
+      alert("Print Error: " + err.message);
     }
   }
 
-  // Lógica de interfaz (Modales, botones)...
+  // Interface Logic
   const abrirModal = (producto) => {
     setProductoActual(producto)
     setSeleccion({ size: "Large", filling: INGREDIENTES.fillings[0], sauce: "No Sauce", toppings: [] })
@@ -156,8 +155,8 @@ function App() {
       <header className="mb-6 text-center">
         <h1 className="text-4xl font-extrabold text-red-700 tracking-wider">BURRITOS JOE</h1>
         <p className="text-gray-500 font-medium">
-          Estado Impresora: <span className={impresoraConectada ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-            {impresoraConectada ? "CONECTADA ✅" : "DESCONECTADA ❌"}
+          Printer Status: <span className={impresoraConectada ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+            {impresoraConectada ? "CONNECTED ✅" : "DISCONNECTED ❌"}
           </span>
         </p>
       </header>
@@ -176,10 +175,10 @@ function App() {
 
         <div className="bg-white p-6 rounded-xl shadow-lg h-fit flex flex-col">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex justify-between">
-            Orden Actual <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length}</span>
+            Current Order <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length} items</span>
           </h2>
           <div className="flex-1 min-h-[300px] max-h-[500px] overflow-y-auto space-y-3 mb-4">
-             {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Orden Vacía</div>}
+             {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Empty Order</div>}
              {orden.map((item) => (
                 <div key={item.id} className="border p-3 rounded bg-gray-50 relative">
                   <button onClick={() => eliminarItem(item.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 font-bold">X</button>
@@ -188,7 +187,7 @@ function App() {
                 </div>
              ))}
           </div>
-          <button onClick={manejarImpresion} className="w-full bg-gray-900 text-white font-bold py-4 rounded-lg text-xl hover:bg-black transition shadow-lg">IMPRIMIR 🖨️</button>
+          <button onClick={manejarImpresion} className="w-full bg-gray-900 text-white font-bold py-4 rounded-lg text-xl hover:bg-black transition shadow-lg">PRINT ORDER 🖨️</button>
         </div>
       </div>
 
@@ -196,7 +195,7 @@ function App() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
             <h3 className="text-2xl font-bold mb-4">{productoActual}</h3>
-            {/* OPCIONES DE SELECCIÓN */}
+            {/* SELECTION OPTIONS */}
             <div className="space-y-4">
                 <div><p className="font-bold">Size:</p> <div className="flex gap-2">{INGREDIENTES.sizes.map(s => <button key={s} onClick={() => setSeleccion({...seleccion, size: s})} className={`px-4 py-2 border rounded ${seleccion.size === s ? 'bg-orange-500 text-white' : ''}`}>{s}</button>)}</div></div>
                 <div><p className="font-bold">Filling:</p> <div className="grid grid-cols-3 gap-2">{INGREDIENTES.fillings.map(f => <button key={f} onClick={() => setSeleccion({...seleccion, filling: f})} className={`p-2 text-xs border rounded ${seleccion.filling === f ? 'bg-orange-100 border-orange-500' : ''}`}>{f}</button>)}</div></div>
@@ -204,8 +203,8 @@ function App() {
                 <div><p className="font-bold">Toppings:</p> <div className="grid grid-cols-3 gap-2">{INGREDIENTES.toppings.map(t => <button key={t} onClick={() => toggleTopping(t)} className={`p-2 text-xs border rounded ${seleccion.toppings.includes(t) ? 'bg-blue-100 border-blue-500' : ''}`}>{t}</button>)}</div></div>
             </div>
             <div className="mt-6 flex gap-4">
-                <button onClick={() => setModalAbierto(false)} className="flex-1 py-3 bg-gray-200 rounded font-bold">Cancelar</button>
-                <button onClick={agregarAOrden} className="flex-1 py-3 bg-green-600 text-white rounded font-bold">Agregar</button>
+                <button onClick={() => setModalAbierto(false)} className="flex-1 py-3 bg-gray-200 rounded font-bold">Cancel</button>
+                <button onClick={agregarAOrden} className="flex-1 py-3 bg-green-600 text-white rounded font-bold">Add to Order</button>
             </div>
           </div>
         </div>
