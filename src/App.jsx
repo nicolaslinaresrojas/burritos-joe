@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import qz from 'qz-tray';
 
-// --- CONFIGURACIÓN DEL MENÚ ---
-const INGREDIENTES = {
+// --- MENU CONFIGURATION (LONDON) ---
+const INGREDIENTS = {
   sizes: ["Large", "Small"],
   fillings: [
     "Chicken", "Chicken & Chorizo", "Chicken Tinga", "Pulled Pork",
@@ -10,7 +10,10 @@ const INGREDIENTES = {
     "Jackfruit", "Vegan Chicken", "Mixed Beans"
   ],
   sauces: ["No Sauce", "Mild - Pico de Gallo", "Medium - Green Tomatillo", "Hot - Spicy Salsa"],
-  toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapenos"]
+  // Exclusiones (Lo que se quita)
+  toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapenos"],
+  // Adiciones (Lo que se agrega)
+  extras: ["Meat", "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", "Cheese", "Lettuce", "Coriander", "Jalapeños", "Sour Cream"]
 }
 
 function App() {
@@ -19,16 +22,18 @@ function App() {
   const [productoActual, setProductoActual] = useState(null)
   const [impresoraConectada, setImpresoraConectada] = useState(false)
   
+  // Estado de la selección actual
   const [seleccion, setSeleccion] = useState({
+    orderRef: "", // Nuevo campo para el número de referencia
     size: "Large",
     filling: INGREDIENTES.fillings[0],
     sauce: "No Sauce",
-    toppings: []
+    toppings: [], // Array para lo que se QUITA (No Toppings)
+    extras: []    // Array para lo que se AGREGA (Extras)
   })
 
-  // --- 1. INICIAR CONEXIÓN CON QZ TRAY AL CARGAR LA PÁGINA ---
+  // --- 1. CONNECT TO QZ TRAY ON LOAD ---
   useEffect(() => {
-    // Certificado de prueba para desarrollo (Evita errores de seguridad local)
     qz.security.setCertificatePromise((resolve, reject) => {
       resolve("-----BEGIN CERTIFICATE-----\n" +
         "MIIDatCCAlOgAwIBAgIUBzkS+l0i5iJ0xJbQ2f5s0W5c5B0wDQYJKoZIhvcNAQEL\n" +
@@ -46,7 +51,6 @@ function App() {
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
-        "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "-----END CERTIFICATE-----");
     });
 
@@ -54,7 +58,6 @@ function App() {
         return function(resolve, reject) { resolve(); };
     });
 
-    // Conectar con el software QZ Tray local
     if (!qz.websocket.isActive()) {
       qz.websocket.connect()
         .then(() => {
@@ -69,84 +72,97 @@ function App() {
   }, []);
 
 
-  // --- 2. GENERADOR DE CÓDIGO ZPL ---
+  // --- 2. ZPL LABEL DESIGN (ZEBRA ZD230 - 104mm x 50.8mm) ---
   const generarZPL = (item, indice, total) => {
-    const toppings = item.toppings.length > 0 ? item.toppings.join(", ") : "N/A";
+    // Preparar textos
+    const exclusions = item.toppings.length > 0 ? item.toppings.join(", ") : "None"; 
+    const extrasList = item.extras.length > 0 ? item.extras.join(", ") : "None";
+    const refNumber = item.orderRef ? `#${item.orderRef}` : "N/A";
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-    // ZPL para Zebra ZD230 (Ancho 812 dots)
+    // ZPL Ajustado:
+    // ^PW832 = 104mm ancho
+    // ^LL406 = 50.8mm alto (2 inches)
+    
     return `
 ^XA
-^PW812
+^PW832
 ^MNN
-^LL600
-^FX --- HEADER ---
-^FO0,0^GB812,120,80^FS
-^FO0,30^A0N,60,60^FB812,1,0,C^FR^FD BURRITOS JOE ^FS
-^FX --- INFO ---
-^FO20,140^A0N,28,28^FDTime: ${fecha}^FS
-^FO550,140^A0N,28,28^FDItem ${indice} of ${total}^FS
-^FO20,170^GB772,2,2^FS
-^FX --- PRODUCT ---
-^FO20,200^A0N,70,70^FB772,1,0,C^FD${item.producto.toUpperCase()}^FS
-^FO20,270^A0N,40,40^FB772,1,0,C^FD(${item.size})^FS
-^FX --- DETAILS ---
-^FO20,330^GB772,250,2^FS
-^FO40,350^A0N,30,30^FDFILLING:^FS
-^FO250,350^A0N,30,30^FD${item.filling}^FS
-^FO40,400^A0N,30,30^FDSAUCE:^FS
-^FO250,400^A0N,30,30^FD${item.sauce}^FS
-^FO40,450^A0N,30,30^FDNO TOPPINGS:^FS
-^FO40,490^A0N,25,25^FB730,3,0,L^FD${toppings}^FS
+^LL406
+
+^FX --- HEADER COMPACTO ---
+^FO0,0^GB832,50,50^FS
+^FO10,10^A0N,35,35^FR^FD BURRITOS JOE ^FS
+^FO550,10^A0N,25,25^FR^FD${indice}/${total}^FS
+
+^FX --- INFO & REF (Arriba derecha) ---
+^FO650,10^A0N,25,25^FR^FDTime: ${fecha}^FS
+^FO10,55^A0N,25,25^FDRef Order:^FS
+^FO140,50^A0N,35,35^FD${refNumber}^FS
+
+^FX --- LINEA SEPARADORA ---
+^FO10,85^GB812,2,2^FS
+
+^FX --- PRODUCTO (Grande pero ajustado) ---
+^FO10,95^A0N,50,50^FD${item.producto.toUpperCase()} (${item.size})^FS
+
+^FX --- DETALLES COMPACTOS ---
+^FO10,150^A0N,25,25^FDFilling: ${item.filling}^FS
+^FO10,180^A0N,25,25^FDSauce: ${item.sauce}^FS
+
+^FX --- EXTRAS (Nuevo) ---
+^FO10,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+
+^FX --- NO TOPPINGS (Inline - Al lado para ahorrar espacio) ---
+^FO10,250^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
+
 ^FX --- FOOTER ---
-^FO20,620^A0N,20,20^FDCustomer Order - Thank You!^FS
+^FO10,370^A0N,20,20^FDCustomer Order - Thank You!^FS
 ^XZ`;
   }
 
-  // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
-  // --- 3. PRINT HANDLER (UPDATED FOR ZDESIGNER) ---
-  // --- 3. PRINT HANDLER (NUCLEAR OPTION - DEFAULT PRINTER) ---
+  // --- 3. PRINT HANDLER (NUCLEAR OPTION) ---
   const manejarImpresion = async () => {
     if (orden.length === 0) return alert("Order is empty!");
-    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected. Make sure the software is running on the PC.");
+    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected.");
 
     try {
-      // PASO 1: Diagnóstico (Esto mostrará en la consola qué impresoras ve el sistema)
-      // Si falla, diles que te manden foto de la consola (F12)
       const allPrinters = await qz.printers.find();
-      console.log("Available printers:", allPrinters);
+      console.log("Printers:", allPrinters);
 
-      // PASO 2: OBTENER LA IMPRESORA POR DEFECTO DIRECTAMENTE
-      // No buscamos "Zebra" ni "ZDesigner". Usamos la que tenga el chulito verde en Windows.
+      // Usar impresora por defecto de Windows
       const defaultPrinter = await qz.printers.getDefault();
-      
-      console.log("Using Default Printer:", defaultPrinter);
+      console.log("Using Default:", defaultPrinter);
 
-      // Creamos la configuración con esa impresora encontrada
       const config = qz.configs.create(defaultPrinter); 
-
       const datosAImprimir = [];
       orden.forEach((item, index) => {
         datosAImprimir.push(generarZPL(item, index + 1, orden.length));
       });
 
-      // PASO 3: ENVIAR
       await qz.print(config, datosAImprimir);
-      
-      alert(`Sent to printer successfully! (${defaultPrinter}) 🖨️`);
+      alert(`Sent to printer! (${defaultPrinter}) 🖨️`);
       setOrden([]); 
     } catch (err) {
       console.error(err);
-      alert("CRITICAL ERROR: " + err.message + "\n\n(Tip: Make sure the Zebra is set as 'Default Printer' in Windows Control Panel)");
+      alert("CRITICAL ERROR: " + err.message);
     }
   }
 
-  // Lógica de interfaz (Modales, botones)...
+  // Lógica de interfaz
   const abrirModal = (producto) => {
     setProductoActual(producto)
-    setSeleccion({ size: "Large", filling: INGREDIENTES.fillings[0], sauce: "No Sauce", toppings: [] })
+    setSeleccion({ 
+      orderRef: "", // Resetear referencia
+      size: "Large", 
+      filling: INGREDIENTES.fillings[0], 
+      sauce: "No Sauce", 
+      toppings: [],
+      extras: [] 
+    })
     setModalAbierto(true)
   }
+
   const toggleTopping = (topping) => {
     setSeleccion(prev => {
         return prev.toppings.includes(topping) 
@@ -154,10 +170,25 @@ function App() {
         : { ...prev, toppings: [...prev.toppings, topping] }
     })
   }
+
+  // Nueva función para Extras
+  const toggleExtra = (extra) => {
+    setSeleccion(prev => {
+        return prev.extras.includes(extra) 
+        ? { ...prev, extras: prev.extras.filter(e => e !== extra) } 
+        : { ...prev, extras: [...prev.extras, extra] }
+    })
+  }
+
   const agregarAOrden = () => {
+    if(!seleccion.orderRef) {
+       // Opcional: Si quieres obligar a poner numero, descomenta esto
+       // return alert("Please enter Order Ref #");
+    }
     setOrden([...orden, { id: Date.now(), producto: productoActual, ...seleccion }])
     setModalAbierto(false)
   }
+
   const eliminarItem = (id) => setOrden(orden.filter(item => item.id !== id))
 
   return (
@@ -185,15 +216,17 @@ function App() {
 
         <div className="bg-white p-6 rounded-xl shadow-lg h-fit flex flex-col">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex justify-between">
-            Current Order <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length}</span>
+            Current Order <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length} items</span>
           </h2>
           <div className="flex-1 min-h-[300px] max-h-[500px] overflow-y-auto space-y-3 mb-4">
              {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Empty Order</div>}
              {orden.map((item) => (
-                <div key={item.id} className="border p-3 rounded bg-gray-50 relative">
+                <div key={item.id} className="border p-3 rounded bg-gray-50 relative group">
                   <button onClick={() => eliminarItem(item.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 font-bold">X</button>
-                  <div className="font-bold">{item.producto} ({item.size})</div>
+                  <div className="font-bold">#{item.orderRef} - {item.producto} ({item.size})</div>
                   <div className="text-sm text-gray-600">{item.filling}, {item.sauce}</div>
+                  {item.extras.length > 0 && <div className="text-xs text-green-700 font-bold">Extra: {item.extras.join(", ")}</div>}
+                  {item.toppings.length > 0 && <div className="text-xs text-red-600 font-bold">No: {item.toppings.join(", ")}</div>}
                 </div>
              ))}
           </div>
@@ -201,17 +234,93 @@ function App() {
         </div>
       </div>
 
+      {/* MODAL */}
       {modalAbierto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-            <h3 className="text-2xl font-bold mb-4">{productoActual}</h3>
-            {/* OPCIONES DE SELECCIÓN */}
-            <div className="space-y-4">
-                <div><p className="font-bold">Size:</p> <div className="flex gap-2">{INGREDIENTES.sizes.map(s => <button key={s} onClick={() => setSeleccion({...seleccion, size: s})} className={`px-4 py-2 border rounded ${seleccion.size === s ? 'bg-orange-500 text-white' : ''}`}>{s}</button>)}</div></div>
-                <div><p className="font-bold">Filling:</p> <div className="grid grid-cols-3 gap-2">{INGREDIENTES.fillings.map(f => <button key={f} onClick={() => setSeleccion({...seleccion, filling: f})} className={`p-2 text-xs border rounded ${seleccion.filling === f ? 'bg-orange-100 border-orange-500' : ''}`}>{f}</button>)}</div></div>
-                <div><p className="font-bold">Sauce:</p> <div className="grid grid-cols-2 gap-2">{INGREDIENTES.sauces.map(s => <button key={s} onClick={() => setSeleccion({...seleccion, sauce: s})} className={`p-2 text-xs border rounded ${seleccion.sauce === s ? 'bg-green-100 border-green-500' : ''}`}>{s}</button>)}</div></div>
-                <div><p className="font-bold">No Toppings:</p> <div className="grid grid-cols-3 gap-2">{INGREDIENTES.toppings.map(t => <button key={t} onClick={() => toggleTopping(t)} className={`p-2 text-xs border rounded ${seleccion.toppings.includes(t) ? 'bg-red-100 border-red-500' : ''}`}>{t}</button>)}</div></div>
+            
+            {/* 1. ORDER REFERENCE INPUT (NUEVO) */}
+            <div className="mb-6 flex justify-between items-center border-b pb-4">
+                <h3 className="text-2xl font-bold">{productoActual}</h3>
+                <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-700">Order Ref #:</span>
+                    <input 
+                        type="number" 
+                        value={seleccion.orderRef}
+                        onChange={(e) => setSeleccion({...seleccion, orderRef: e.target.value})}
+                        className="border-2 border-gray-300 rounded-lg p-2 w-24 text-2xl font-bold text-center focus:border-orange-500 outline-none"
+                        placeholder="0"
+                    />
+                </div>
             </div>
+            
+            <div className="space-y-4">
+                {/* SIZE */}
+                <div>
+                    <p className="font-bold">Size:</p> 
+                    <div className="flex gap-2">
+                        {INGREDIENTES.sizes.map(s => (
+                            <button key={s} onClick={() => setSeleccion({...seleccion, size: s})} 
+                            className={`px-4 py-2 border rounded ${seleccion.size === s ? 'bg-orange-500 text-white' : ''}`}>
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* FILLING */}
+                <div>
+                    <p className="font-bold">Filling:</p> 
+                    <div className="grid grid-cols-3 gap-2">
+                        {INGREDIENTES.fillings.map(f => (
+                            <button key={f} onClick={() => setSeleccion({...seleccion, filling: f})} 
+                            className={`p-2 text-xs border rounded ${seleccion.filling === f ? 'bg-orange-100 border-orange-500' : ''}`}>
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* SAUCE */}
+                <div>
+                    <p className="font-bold">Sauce:</p> 
+                    <div className="grid grid-cols-2 gap-2">
+                        {INGREDIENTES.sauces.map(s => (
+                            <button key={s} onClick={() => setSeleccion({...seleccion, sauce: s})} 
+                            className={`p-2 text-xs border rounded ${seleccion.sauce === s ? 'bg-green-100 border-green-500' : ''}`}>
+                                {s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* EXTRAS (NUEVA SECCIÓN) */}
+                <div>
+                    <p className="font-bold text-green-700">EXTRAS (Add):</p> 
+                    <div className="grid grid-cols-3 gap-2">
+                        {INGREDIENTES.extras.map(e => (
+                            <button key={e} onClick={() => toggleExtra(e)} 
+                            className={`p-2 text-xs border rounded ${seleccion.extras.includes(e) ? 'bg-green-100 border-green-500 text-green-800 font-bold' : ''}`}>
+                                {e} {seleccion.extras.includes(e) && "➕"}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* NO TOPPINGS */}
+                <div>
+                    <p className="font-bold text-red-600">No Toppings (Remove):</p> 
+                    <div className="grid grid-cols-3 gap-2">
+                        {INGREDIENTES.toppings.map(t => (
+                            <button key={t} onClick={() => toggleTopping(t)} 
+                            className={`p-2 text-xs border rounded ${seleccion.toppings.includes(t) ? 'bg-red-100 border-red-500 text-red-800' : ''}`}>
+                                {t} {seleccion.toppings.includes(t) && "❌"}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             <div className="mt-6 flex gap-4">
                 <button onClick={() => setModalAbierto(false)} className="flex-1 py-3 bg-gray-200 rounded font-bold">Cancel</button>
                 <button onClick={agregarAOrden} className="flex-1 py-3 bg-green-600 text-white rounded font-bold">Add to Order</button>
