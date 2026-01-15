@@ -105,40 +105,39 @@ function App() {
 
   // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
   // --- 3. PRINT HANDLER (UPDATED FOR ZDESIGNER) ---
+  // --- 3. PRINT HANDLER (NUCLEAR OPTION - DEFAULT PRINTER) ---
   const manejarImpresion = async () => {
     if (orden.length === 0) return alert("Order is empty!");
     if (!impresoraConectada) return alert("ERROR: QZ Tray not detected. Make sure the software is running on the PC.");
 
     try {
-      // CAMBIO AQUÍ: Ahora buscamos "ZDesigner" en lugar de "Zebra"
-      // Esto encontrará la impresora: "ZDesigner ZD230-203dpi ZPL (1)"
-      const printers = await qz.printers.find("ZDesigner"); 
+      // PASO 1: Diagnóstico (Esto mostrará en la consola qué impresoras ve el sistema)
+      // Si falla, diles que te manden foto de la consola (F12)
+      const allPrinters = await qz.printers.find();
+      console.log("Available printers:", allPrinters);
+
+      // PASO 2: OBTENER LA IMPRESORA POR DEFECTO DIRECTAMENTE
+      // No buscamos "Zebra" ni "ZDesigner". Usamos la que tenga el chulito verde en Windows.
+      const defaultPrinter = await qz.printers.getDefault();
       
-      const config = qz.configs.create(printers); 
+      console.log("Using Default Printer:", defaultPrinter);
+
+      // Creamos la configuración con esa impresora encontrada
+      const config = qz.configs.create(defaultPrinter); 
 
       const datosAImprimir = [];
       orden.forEach((item, index) => {
         datosAImprimir.push(generarZPL(item, index + 1, orden.length));
       });
 
+      // PASO 3: ENVIAR
       await qz.print(config, datosAImprimir);
       
-      alert("Sent to printer successfully! 🖨️");
+      alert(`Sent to printer successfully! (${defaultPrinter}) 🖨️`);
       setOrden([]); 
     } catch (err) {
       console.error(err);
-      // Si falla buscando ZDesigner, intentamos con la impresora por defecto de Windows
-      try {
-        console.log("ZDesigner not found, trying default...");
-        const configDefault = qz.configs.create(null);
-        const datosDefault = [];
-        orden.forEach((item, index) => datosDefault.push(generarZPL(item, index + 1, orden.length)));
-        await qz.print(configDefault, datosDefault);
-        alert("Sent to Default Printer! 🖨️");
-        setOrden([]);
-      } catch (errDefault) {
-        alert("Print Error: Could not find 'ZDesigner' printer and Default failed.");
-      }
+      alert("CRITICAL ERROR: " + err.message + "\n\n(Tip: Make sure the Zebra is set as 'Default Printer' in Windows Control Panel)");
     }
   }
 
