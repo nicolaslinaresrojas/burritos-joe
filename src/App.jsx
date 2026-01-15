@@ -10,7 +10,7 @@ const INGREDIENTES = {
     "Jackfruit", "Vegan Chicken", "Mixed Beans"
   ],
   sauces: ["No Sauce", "Mild - Pico de Gallo", "Medium - Green Tomatillo", "Hot - Spicy Salsa"],
-  toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapeños"]
+  toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapenos"]
 }
 
 function App() {
