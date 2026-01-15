@@ -111,7 +111,7 @@ function App() {
     try {
       // a. Buscar la impresora Zebra
       // Nota: Busca cualquier impresora que tenga "Zebra" en el nombre
-      const printers = await qz.printers.find("Zebra"); 
+      const printers = await qz.printers.find("ZDesigner"); 
       
       // Si no encuentra una que diga "Zebra", usa la predeterminada del sistema
       const config = qz.configs.create(printers || null); 
