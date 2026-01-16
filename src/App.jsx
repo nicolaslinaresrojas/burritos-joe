@@ -88,7 +88,7 @@ function App() {
 ^XA
 ^PW832
 ^MNN
-^LL406
+^LL382
 
 ^FX --- HEADER COMPACTO ---
 ^FO0,0^GB832,50,50^FS
