@@ -92,14 +92,14 @@ function App() {
 
 ^FX --- HEADER COMPACTO ---
 ^FO0,0^GB832,50,50^FS
-^FO10,10^A0N,35,35^FR^FD BURRITO JOE ^FS
+^FO20,10^A0N,35,35^FR^FD BURRITO JOE ^FS
 ^FO550,10^A0N,25,25^FR^FD${indice}/${total}^FS
 
 ^FX --- INFO & REF (AJUSTADO AQUI) ---
 ^FO650,10^A0N,25,25^FR^FDTime: ${fecha}^FS
 
 ^FX "Ref Order:" un poquito mas abajo para alinear
-^FO10,58^A0N,25,25^FDRef Order:^FS
+^FO20,58^A0N,25,25^FDRef Order:^FS
 
 ^FX El Numero # un poco mas pequeño (28) y mas abajo (58)
 ^FO140,58^A0N,28,28^FD${refNumber}^FS
@@ -108,20 +108,20 @@ function App() {
 ^FO10,90^GB812,2,2^FS
 
 ^FX --- PRODUCTO ---
-^FO10,100^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
+^FO20,100^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
 
 ^FX --- DETALLES ---
-^FO10,150^A0N,25,25^FDFilling: ${item.filling}^FS
-^FO10,180^A0N,25,25^FDSauce: ${item.sauce}^FS
+^FO20,150^A0N,25,25^FDFilling: ${item.filling}^FS
+^FO20,180^A0N,25,25^FDSauce: ${item.sauce}^FS
 
 ^FX --- NO TOPPINGS ---
-^FO10,250^A0N,25,25^FDREMOVE INGREDIENTS: ${exclusions}^FS
+^FO20,250^A0N,25,25^FDREMOVE INGREDIENTS: ${exclusions}^FS
 
 ^FX --- EXTRAS ---
-^FO10,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+^FO20,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
 
 ^FX --- FOOTER ---
-^FO10,360^A0N,20,20^FDCustomer Order - Thank You!^FS
+^FO20,360^A0N,20,20^FDCustomer Order - Thank You!^FS
 ^XZ`;
   }
 
