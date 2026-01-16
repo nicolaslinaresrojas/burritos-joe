@@ -12,7 +12,7 @@ const INGREDIENTES = {
   sauces: ["No Sauce", "Mild - Pico de Gallo", "Medium - Green Tomatillo", "Hot - Spicy Salsa"],
   toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapenos"],
   // AGREGA ESTO AL FINAL (OJO CON LA COMA ANTERIOR):
-  extras: ["Meat", "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", "Cheese", "Lettuce", "Coriander", "Jalapeños", "Sour Cream"]
+  extras: ["Meat", "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", "Cheese", "Lettuce", "Coriander", "Jalapenos", "Sour Cream"]
 }
 
 function App() {
@@ -92,7 +92,7 @@ function App() {
 
 ^FX --- HEADER COMPACTO ---
 ^FO0,0^GB832,50,50^FS
-^FO10,10^A0N,35,35^FR^FD BURRITOS JOE ^FS
+^FO10,10^A0N,35,35^FR^FD BURRITO JOE ^FS
 ^FO550,10^A0N,25,25^FR^FD${indice}/${total}^FS
 
 ^FX --- INFO & REF (AJUSTADO AQUI) ---
@@ -307,7 +307,7 @@ function App() {
 
                 {/* NO TOPPINGS */}
                 <div>
-                    <p className="font-bold text-red-600">No Toppings (Remove):</p> 
+                    <p className="font-bold text-red-600">No Toppings (Remove Ingredients):</p> 
                     <div className="grid grid-cols-3 gap-2">
                         {INGREDIENTES.toppings.map(t => (
                             <button key={t} onClick={() => toggleTopping(t)} 
@@ -321,7 +321,7 @@ function App() {
 
                 {/* EXTRAS (NUEVA SECCIÓN) */}
                 <div>
-                    <p className="font-bold text-green-700">EXTRAS (Add):</p> 
+                    <p className="font-bold text-green-700">Extras (Add):</p> 
                     <div className="grid grid-cols-3 gap-2">
                         {INGREDIENTES.extras.map(e => (
                             <button key={e} onClick={() => toggleExtra(e)} 
