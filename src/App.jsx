@@ -74,7 +74,7 @@ function App() {
 
 
   // --- 2. GENERADOR DE CÓDIGO ZPL ---
-  // --- 2. GENERADOR DE CÓDIGO ZPL (AJUSTADO: REF MAS PEQUEÑO Y BAJO) ---
+  // --- 2. GENERADOR DE CÓDIGO ZPL (CON SENSOR DE HUECOS ACTIVADO) ---
   const generarZPL = (item, indice, total) => {
     // Preparar textos
     const exclusions = item.toppings.length > 0 ? item.toppings.join(", ") : "None"; 
@@ -82,46 +82,47 @@ function App() {
     const refNumber = item.orderRef ? `#${item.orderRef}` : "N/A";
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-    // ^PW832 = Ancho 104mm
-    // ^LL406 = Alto 50.8mm
+    // CAMBIOS IMPORTANTES PARA CALIBRAR:
+    // 1. ^MNW = "Media Tracking Web". Activa el sensor para detectar el hueco entre stickers.
+    // 2. Quitamos ^LL (Label Length) para que la impresora use lo que mide el sensor y no fuerce una medida incorrecta.
+    
     return `
 ^XA
 ^PW832
-^MNN
-^LL382
+^MNW
 
 ^FX --- HEADER COMPACTO ---
 ^FO0,0^GB832,50,50^FS
-^FO20,10^A0N,35,35^FR^FD BURRITO JOE ^FS
+^FO30,10^A0N,35,35^FR^FD BURRITO JOE ^FS
 ^FO550,10^A0N,25,25^FR^FD${indice}/${total}^FS
 
-^FX --- INFO & REF (AJUSTADO AQUI) ---
+^FX --- INFO & REF ---
 ^FO650,10^A0N,25,25^FR^FDTime: ${fecha}^FS
 
-^FX "Ref Order:" un poquito mas abajo para alinear
-^FO20,58^A0N,25,25^FDRef Order:^FS
+^FX Ref Order
+^FO30,58^A0N,25,25^FDRef Order:^FS
 
-^FX El Numero # un poco mas pequeño (28) y mas abajo (58)
-^FO140,58^A0N,28,28^FD${refNumber}^FS
+^FX Numero
+^FO160,58^A0N,28,28^FD${refNumber}^FS
 
-^FX --- LINEA SEPARADORA (Bajada a 90 para dar espacio) ---
-^FO10,90^GB812,2,2^FS
+^FX --- LINEA SEPARADORA ---
+^FO30,90^GB780,2,2^FS
 
 ^FX --- PRODUCTO ---
-^FO20,100^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
+^FO30,100^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
 
 ^FX --- DETALLES ---
-^FO20,150^A0N,25,25^FDFilling: ${item.filling}^FS
-^FO20,180^A0N,25,25^FDSauce: ${item.sauce}^FS
-
-^FX --- NO TOPPINGS ---
-^FO20,250^A0N,25,25^FDREMOVE INGREDIENTS: ${exclusions}^FS
+^FO30,150^A0N,25,25^FDFilling: ${item.filling}^FS
+^FO30,180^A0N,25,25^FDSauce: ${item.sauce}^FS
 
 ^FX --- EXTRAS ---
-^FO20,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+^FO30,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+
+^FX --- NO TOPPINGS ---
+^FO30,250^A0N,25,25^FDREMOVE INGREDIENTS: ${exclusions}^FS
 
 ^FX --- FOOTER ---
-^FO20,360^A0N,20,20^FDCustomer Order - Thank You!^FS
+^FO30,350^A0N,20,20^FDCustomer Order - Thank You!^FS
 ^XZ`;
   }
 
