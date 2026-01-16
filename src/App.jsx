@@ -74,7 +74,7 @@ function App() {
 
 
   // --- 2. GENERADOR DE CÓDIGO ZPL ---
-  // --- 2. GENERADOR DE CÓDIGO ZPL (AJUSTADO A 104mm x 50.8mm) ---
+  // --- 2. GENERADOR DE CÓDIGO ZPL (AJUSTADO: REF MAS PEQUEÑO Y BAJO) ---
   const generarZPL = (item, indice, total) => {
     // Preparar textos
     const exclusions = item.toppings.length > 0 ? item.toppings.join(", ") : "None"; 
@@ -83,7 +83,7 @@ function App() {
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
     // ^PW832 = Ancho 104mm
-    // ^LL406 = Alto 50.8mm (2 pulgadas)
+    // ^LL406 = Alto 50.8mm
     return `
 ^XA
 ^PW832
@@ -95,26 +95,30 @@ function App() {
 ^FO10,10^A0N,35,35^FR^FD BURRITOS JOE ^FS
 ^FO550,10^A0N,25,25^FR^FD${indice}/${total}^FS
 
-^FX --- INFO & REF (Arriba derecha) ---
+^FX --- INFO & REF (AJUSTADO AQUI) ---
 ^FO650,10^A0N,25,25^FR^FDTime: ${fecha}^FS
-^FO10,55^A0N,25,25^FDRef Order:^FS
-^FO140,50^A0N,35,35^FD${refNumber}^FS
 
-^FX --- LINEA SEPARADORA ---
-^FO10,85^GB812,2,2^FS
+^FX "Ref Order:" un poquito mas abajo para alinear
+^FO10,58^A0N,25,25^FDRef Order:^FS
+
+^FX El Numero # un poco mas pequeño (28) y mas abajo (58)
+^FO140,58^A0N,28,28^FD${refNumber}^FS
+
+^FX --- LINEA SEPARADORA (Bajada a 90 para dar espacio) ---
+^FO10,90^GB812,2,2^FS
 
 ^FX --- PRODUCTO ---
-^FO10,95^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
+^FO10,100^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
 
 ^FX --- DETALLES ---
-^FO10,145^A0N,25,25^FDFilling: ${item.filling}^FS
-^FO10,175^A0N,25,25^FDSauce: ${item.sauce}^FS
+^FO10,150^A0N,25,25^FDFilling: ${item.filling}^FS
+^FO10,180^A0N,25,25^FDSauce: ${item.sauce}^FS
 
-^FX --- EXTRAS (Nuevo) ---
-^FO10,210^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+^FX --- EXTRAS ---
+^FO10,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
 
-^FX --- NO TOPPINGS (Compacto al lado) ---
-^FO10,245^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
+^FX --- NO TOPPINGS ---
+^FO10,250^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
 
 ^FX --- FOOTER ---
 ^FO10,360^A0N,20,20^FDCustomer Order - Thank You!^FS
@@ -201,7 +205,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 p-4 md:p-8 font-sans">
       <header className="mb-6 text-center">
-        <h1 className="text-4xl font-extrabold text-red-700 tracking-wider">BURRITOS JOE</h1>
+        <h1 className="text-4xl font-extrabold text-red-700 tracking-wider">BURRITO JOE</h1>
         <p className="text-gray-500 font-medium">
           Printer Status: <span className={impresoraConectada ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
             {impresoraConectada ? "CONNECTED ✅" : "DISCONNECTED ❌"}
@@ -294,21 +298,8 @@ function App() {
                     <div className="grid grid-cols-2 gap-2">
                         {INGREDIENTES.sauces.map(s => (
                             <button key={s} onClick={() => setSeleccion({...seleccion, sauce: s})} 
-                            className={`p-2 text-xs border rounded ${seleccion.sauce === s ? 'bg-green-100 border-green-500' : ''}`}>
+                            className={`p-2 text-xs border rounded ${seleccion.sauce === s ? 'bg-blue-100 border-blue-500' : ''}`}>
                                 {s}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* EXTRAS (NUEVA SECCIÓN) */}
-                <div>
-                    <p className="font-bold text-green-700">EXTRAS (Add):</p> 
-                    <div className="grid grid-cols-3 gap-2">
-                        {INGREDIENTES.extras.map(e => (
-                            <button key={e} onClick={() => toggleExtra(e)} 
-                            className={`p-2 text-xs border rounded ${seleccion.extras.includes(e) ? 'bg-green-100 border-green-500 text-green-800 font-bold' : ''}`}>
-                                {e} {seleccion.extras.includes(e) && "➕"}
                             </button>
                         ))}
                     </div>
@@ -327,6 +318,19 @@ function App() {
                     </div>
                 </div>
             </div>
+
+                {/* EXTRAS (NUEVA SECCIÓN) */}
+                <div>
+                    <p className="font-bold text-green-700">EXTRAS (Add):</p> 
+                    <div className="grid grid-cols-3 gap-2">
+                        {INGREDIENTES.extras.map(e => (
+                            <button key={e} onClick={() => toggleExtra(e)} 
+                            className={`p-2 text-xs border rounded ${seleccion.extras.includes(e) ? 'bg-green-100 border-green-500 text-green-800 font-bold' : ''}`}>
+                                {e} {seleccion.extras.includes(e) && "➕"}
+                            </button>
+                        ))}
+                    </div>
+                </div>
 
             <div className="mt-6 flex gap-4">
                 <button onClick={() => setModalAbierto(false)} className="flex-1 py-3 bg-gray-200 rounded font-bold">Cancel</button>
