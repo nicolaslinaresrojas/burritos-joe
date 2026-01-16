@@ -74,7 +74,7 @@ function App() {
 
 
   // --- 2. GENERADOR DE CÓDIGO ZPL ---
-  // --- 2. GENERADOR DE CÓDIGO ZPL (CON SENSOR DE HUECOS ACTIVADO) ---
+  // --- 2. GENERADOR ZPL (TODO BAJADO 20 PUNTOS PARA MARGEN SUPERIOR) ---
   const generarZPL = (item, indice, total) => {
     // Preparar textos
     const exclusions = item.toppings.length > 0 ? item.toppings.join(", ") : "None"; 
@@ -82,47 +82,44 @@ function App() {
     const refNumber = item.orderRef ? `#${item.orderRef}` : "N/A";
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-    // CAMBIOS IMPORTANTES PARA CALIBRAR:
-    // 1. ^MNW = "Media Tracking Web". Activa el sensor para detectar el hueco entre stickers.
-    // 2. Quitamos ^LL (Label Length) para que la impresora use lo que mide el sensor y no fuerce una medida incorrecta.
+    // AJUSTES REALIZADOS:
+    // 1. ^MNW sigue activo para evitar que se descalibre.
+    // 2. Todas las coordenadas Y (el segundo número de ^FO) aumentaron +20.
     
     return `
 ^XA
 ^PW832
 ^MNW
 
-^FX --- HEADER COMPACTO ---
-^FO0,0^GB832,50,50^FS
-^FO30,10^A0N,35,35^FR^FD BURRITO JOE ^FS
-^FO550,10^A0N,25,25^FR^FD${indice}/${total}^FS
+^FX --- HEADER COMPACTO (Bajado Y+20) ---
+^FO0,20^GB832,50,50^FS
+^FO30,30^A0N,35,35^FR^FD BURRITO JOE ^FS
+^FO550,30^A0N,25,25^FR^FD${indice}/${total}^FS
 
-^FX --- INFO & REF ---
-^FO650,10^A0N,25,25^FR^FDTime: ${fecha}^FS
+^FX --- INFO & REF (Bajado Y+20) ---
+^FO650,30^A0N,25,25^FR^FDTime: ${fecha}^FS
 
-^FX Ref Order
-^FO30,58^A0N,25,25^FDRef Order:^FS
+^FO30,78^A0N,25,25^FDRef Order:^FS
+^FO160,78^A0N,28,28^FD${refNumber}^FS
 
-^FX Numero
-^FO160,58^A0N,28,28^FD${refNumber}^FS
+^FX --- LINEA SEPARADORA (Bajado Y+20) ---
+^FO30,110^GB780,2,2^FS
 
-^FX --- LINEA SEPARADORA ---
-^FO30,90^GB780,2,2^FS
+^FX --- PRODUCTO (Bajado Y+20) ---
+^FO30,120^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
 
-^FX --- PRODUCTO ---
-^FO30,100^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
+^FX --- DETALLES (Bajado Y+20) ---
+^FO30,170^A0N,25,25^FDFilling: ${item.filling}^FS
+^FO30,200^A0N,25,25^FDSauce: ${item.sauce}^FS
 
-^FX --- DETALLES ---
-^FO30,150^A0N,25,25^FDFilling: ${item.filling}^FS
-^FO30,180^A0N,25,25^FDSauce: ${item.sauce}^FS
+^FX --- EXTRAS (Bajado Y+20) ---
+^FO30,235^A0N,25,25^FDEXTRAS: ${extrasList}^FS
 
-^FX --- EXTRAS ---
-^FO30,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+^FX --- NO TOPPINGS (Bajado Y+20) ---
+^FO30,270^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
 
-^FX --- NO TOPPINGS ---
-^FO30,250^A0N,25,25^FDREMOVE INGREDIENTS: ${exclusions}^FS
-
-^FX --- FOOTER ---
-^FO30,350^A0N,20,20^FDCustomer Order - Thank You!^FS
+^FX --- FOOTER (Bajado Y+20) ---
+^FO30,370^A0N,20,20^FDCustomer Order - Thank You!^FS
 ^XZ`;
   }
 
