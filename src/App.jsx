@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import qz from 'qz-tray';
 
-// --- MENU CONFIGURATION (LONDON) ---
-const INGREDIENTS = {
+// --- CONFIGURACIÓN DEL MENÚ ---
+const INGREDIENTES = {
   sizes: ["Large", "Small"],
   fillings: [
     "Chicken", "Chicken & Chorizo", "Chicken Tinga", "Pulled Pork",
@@ -10,9 +10,8 @@ const INGREDIENTS = {
     "Jackfruit", "Vegan Chicken", "Mixed Beans"
   ],
   sauces: ["No Sauce", "Mild - Pico de Gallo", "Medium - Green Tomatillo", "Hot - Spicy Salsa"],
-  // Exclusiones (Lo que se quita)
   toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapenos"],
-  // Adiciones (Lo que se agrega)
+  // AGREGA ESTO AL FINAL (OJO CON LA COMA ANTERIOR):
   extras: ["Meat", "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", "Cheese", "Lettuce", "Coriander", "Jalapeños", "Sour Cream"]
 }
 
@@ -22,18 +21,18 @@ function App() {
   const [productoActual, setProductoActual] = useState(null)
   const [impresoraConectada, setImpresoraConectada] = useState(false)
   
-  // Estado de la selección actual
   const [seleccion, setSeleccion] = useState({
-    orderRef: "", // Nuevo campo para el número de referencia
+    orderRef: "", // <-- NUEVO: Para el numero de referencia
     size: "Large",
     filling: INGREDIENTES.fillings[0],
     sauce: "No Sauce",
-    toppings: [], // Array para lo que se QUITA (No Toppings)
-    extras: []    // Array para lo que se AGREGA (Extras)
+    toppings: [],
+    extras: []    // <-- NUEVO: Para los extras
   })
 
-  // --- 1. CONNECT TO QZ TRAY ON LOAD ---
+  // --- 1. INICIAR CONEXIÓN CON QZ TRAY AL CARGAR LA PÁGINA ---
   useEffect(() => {
+    // Certificado de prueba para desarrollo (Evita errores de seguridad local)
     qz.security.setCertificatePromise((resolve, reject) => {
       resolve("-----BEGIN CERTIFICATE-----\n" +
         "MIIDatCCAlOgAwIBAgIUBzkS+l0i5iJ0xJbQ2f5s0W5c5B0wDQYJKoZIhvcNAQEL\n" +
@@ -51,6 +50,7 @@ function App() {
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
+        "x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5x6x8y4x5\n" +
         "-----END CERTIFICATE-----");
     });
 
@@ -58,6 +58,7 @@ function App() {
         return function(resolve, reject) { resolve(); };
     });
 
+    // Conectar con el software QZ Tray local
     if (!qz.websocket.isActive()) {
       qz.websocket.connect()
         .then(() => {
@@ -72,7 +73,8 @@ function App() {
   }, []);
 
 
-  // --- 2. ZPL LABEL DESIGN (ZEBRA ZD230 - 104mm x 50.8mm) ---
+  // --- 2. GENERADOR DE CÓDIGO ZPL ---
+  // --- 2. GENERADOR DE CÓDIGO ZPL (AJUSTADO A 104mm x 50.8mm) ---
   const generarZPL = (item, indice, total) => {
     // Preparar textos
     const exclusions = item.toppings.length > 0 ? item.toppings.join(", ") : "None"; 
@@ -80,10 +82,8 @@ function App() {
     const refNumber = item.orderRef ? `#${item.orderRef}` : "N/A";
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
-    // ZPL Ajustado:
-    // ^PW832 = 104mm ancho
-    // ^LL406 = 50.8mm alto (2 inches)
-    
+    // ^PW832 = Ancho 104mm
+    // ^LL406 = Alto 50.8mm (2 pulgadas)
     return `
 ^XA
 ^PW832
@@ -103,57 +103,69 @@ function App() {
 ^FX --- LINEA SEPARADORA ---
 ^FO10,85^GB812,2,2^FS
 
-^FX --- PRODUCTO (Grande pero ajustado) ---
-^FO10,95^A0N,50,50^FD${item.producto.toUpperCase()} (${item.size})^FS
+^FX --- PRODUCTO ---
+^FO10,95^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
 
-^FX --- DETALLES COMPACTOS ---
-^FO10,150^A0N,25,25^FDFilling: ${item.filling}^FS
-^FO10,180^A0N,25,25^FDSauce: ${item.sauce}^FS
+^FX --- DETALLES ---
+^FO10,145^A0N,25,25^FDFilling: ${item.filling}^FS
+^FO10,175^A0N,25,25^FDSauce: ${item.sauce}^FS
 
 ^FX --- EXTRAS (Nuevo) ---
-^FO10,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+^FO10,210^A0N,25,25^FDEXTRAS: ${extrasList}^FS
 
-^FX --- NO TOPPINGS (Inline - Al lado para ahorrar espacio) ---
-^FO10,250^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
+^FX --- NO TOPPINGS (Compacto al lado) ---
+^FO10,245^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
 
 ^FX --- FOOTER ---
-^FO10,370^A0N,20,20^FDCustomer Order - Thank You!^FS
+^FO10,360^A0N,20,20^FDCustomer Order - Thank You!^FS
 ^XZ`;
   }
 
-  // --- 3. PRINT HANDLER (NUCLEAR OPTION) ---
+  // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
+  // --- 3. PRINT HANDLER (UPDATED FOR ZDESIGNER) ---
+  // --- 3. PRINT HANDLER (NUCLEAR OPTION - DEFAULT PRINTER) ---
   const manejarImpresion = async () => {
     if (orden.length === 0) return alert("Order is empty!");
-    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected.");
+    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected. Make sure the software is running on the PC.");
 
     try {
+      // PASO 1: Diagnóstico (Esto mostrará en la consola qué impresoras ve el sistema)
+      // Si falla, diles que te manden foto de la consola (F12)
       const allPrinters = await qz.printers.find();
-      console.log("Printers:", allPrinters);
+      console.log("Available printers:", allPrinters);
 
-      // Usar impresora por defecto de Windows
+      // PASO 2: OBTENER LA IMPRESORA POR DEFECTO DIRECTAMENTE
+      // No buscamos "Zebra" ni "ZDesigner". Usamos la que tenga el chulito verde en Windows.
       const defaultPrinter = await qz.printers.getDefault();
-      console.log("Using Default:", defaultPrinter);
+      
+      console.log("Using Default Printer:", defaultPrinter);
 
+      // Creamos la configuración con esa impresora encontrada
       const config = qz.configs.create(defaultPrinter); 
+
       const datosAImprimir = [];
       orden.forEach((item, index) => {
         datosAImprimir.push(generarZPL(item, index + 1, orden.length));
       });
 
+      // PASO 3: ENVIAR
       await qz.print(config, datosAImprimir);
-      alert(`Sent to printer! (${defaultPrinter}) 🖨️`);
+      
+      alert(`Sent to printer successfully! (${defaultPrinter}) 🖨️`);
       setOrden([]); 
     } catch (err) {
       console.error(err);
-      alert("CRITICAL ERROR: " + err.message);
+      alert("CRITICAL ERROR: " + err.message + "\n\n(Tip: Make sure the Zebra is set as 'Default Printer' in Windows Control Panel)");
     }
   }
 
-  // Lógica de interfaz
+  // Lógica de interfaz (Modales, botones)...
+  // Lógica de interfaz (Modales, botones)...
   const abrirModal = (producto) => {
     setProductoActual(producto)
+    // REINICIAMOS TODO (INCLUYENDO REF Y EXTRAS)
     setSeleccion({ 
-      orderRef: "", // Resetear referencia
+      orderRef: "", 
       size: "Large", 
       filling: INGREDIENTES.fillings[0], 
       sauce: "No Sauce", 
@@ -171,7 +183,7 @@ function App() {
     })
   }
 
-  // Nueva función para Extras
+  // --- AGREGA ESTA FUNCION NUEVA AQUI ---
   const toggleExtra = (extra) => {
     setSeleccion(prev => {
         return prev.extras.includes(extra) 
@@ -181,14 +193,9 @@ function App() {
   }
 
   const agregarAOrden = () => {
-    if(!seleccion.orderRef) {
-       // Opcional: Si quieres obligar a poner numero, descomenta esto
-       // return alert("Please enter Order Ref #");
-    }
     setOrden([...orden, { id: Date.now(), producto: productoActual, ...seleccion }])
     setModalAbierto(false)
   }
-
   const eliminarItem = (id) => setOrden(orden.filter(item => item.id !== id))
 
   return (
