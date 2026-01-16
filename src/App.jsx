@@ -128,23 +128,21 @@ function App() {
   // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
   // --- 3. PRINT HANDLER (UPDATED FOR ZDESIGNER) ---
   // --- 3. PRINT HANDLER (NUCLEAR OPTION - DEFAULT PRINTER) ---
+  // --- 3. PRINT HANDLER (BLINDADO CONTRA DESCONEXIONES) ---
   const manejarImpresion = async () => {
     if (orden.length === 0) return alert("Order is empty!");
-    if (!impresoraConectada) return alert("ERROR: QZ Tray not detected. Make sure the software is running on the PC.");
 
     try {
-      // PASO 1: Diagnóstico (Esto mostrará en la consola qué impresoras ve el sistema)
-      // Si falla, diles que te manden foto de la consola (F12)
-      const allPrinters = await qz.printers.find();
-      console.log("Available printers:", allPrinters);
+      // PASO 0: VERIFICACIÓN DE SEGURIDAD (RESUCITACIÓN)
+      // Si el puente se cayó, lo levantamos de nuevo aquí mismo.
+      if (!qz.websocket.isActive()) {
+        console.log("Connection lost... Reconnecting...");
+        await qz.websocket.connect();
+        setImpresoraConectada(true);
+      }
 
-      // PASO 2: OBTENER LA IMPRESORA POR DEFECTO DIRECTAMENTE
-      // No buscamos "Zebra" ni "ZDesigner". Usamos la que tenga el chulito verde en Windows.
+      // PASO 1: BUSCAR IMPRESORA POR DEFECTO
       const defaultPrinter = await qz.printers.getDefault();
-      
-      console.log("Using Default Printer:", defaultPrinter);
-
-      // Creamos la configuración con esa impresora encontrada
       const config = qz.configs.create(defaultPrinter); 
 
       const datosAImprimir = [];
@@ -152,14 +150,22 @@ function App() {
         datosAImprimir.push(generarZPL(item, index + 1, orden.length));
       });
 
-      // PASO 3: ENVIAR
+      // PASO 2: ENVIAR
       await qz.print(config, datosAImprimir);
       
-      alert(`Sent to printer successfully! (${defaultPrinter}) 🖨️`);
+      alert(`Sent to printer! (${defaultPrinter}) 🖨️`);
       setOrden([]); 
+
     } catch (err) {
       console.error(err);
-      alert("CRITICAL ERROR: " + err.message + "\n\n(Tip: Make sure the Zebra is set as 'Default Printer' in Windows Control Panel)");
+      // Si el error es justamente ese de "sendData", avisamos claro:
+      if (err.message && err.message.includes("sendData")) {
+        alert("Connection Error: QZ Tray seems closed. Please open the green printer icon and try again.");
+      } else {
+        alert("CRITICAL ERROR: " + err.message);
+      }
+      // Actualizamos el estado visual para que sepan que se cayó
+      if (!qz.websocket.isActive()) setImpresoraConectada(false);
     }
   }
 
