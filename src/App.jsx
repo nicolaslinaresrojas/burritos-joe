@@ -114,11 +114,11 @@ function App() {
 ^FO10,150^A0N,25,25^FDFilling: ${item.filling}^FS
 ^FO10,180^A0N,25,25^FDSauce: ${item.sauce}^FS
 
+^FX --- NO TOPPINGS ---
+^FO10,250^A0N,25,25^FDREMOVE INGREDIENTS: ${exclusions}^FS
+
 ^FX --- EXTRAS ---
 ^FO10,215^A0N,25,25^FDEXTRAS: ${extrasList}^FS
-
-^FX --- NO TOPPINGS ---
-^FO10,250^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
 
 ^FX --- FOOTER ---
 ^FO10,360^A0N,20,20^FDCustomer Order - Thank You!^FS
