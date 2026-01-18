@@ -97,35 +97,39 @@ function App() {
 ^PW832
 ^MNW
 
-^FX --- HEADER COMPACTO (Bajado Y+20) ---
+^FX --- HEADER ---
 ^FO0,20^GB832,50,50^FS
 ^FO30,30^A0N,35,35^FR^FD BURRITO JOE ^FS
 ^FO550,30^A0N,25,25^FR^FD${indice}/${total}^FS
 
-^FX --- INFO & REF (Bajado Y+20) ---
+^FX --- INFO ---
 ^FO650,30^A0N,25,25^FR^FDTime: ${fecha}^FS
 
-^FO30,78^A0N,25,25^FDOrder Reference:^FS
-^FO160,78^A0N,28,28^FD${refNumber}^FS
+^FX --- REF ORDER ---
+^FO30,78^A0N,25,25^FDRef Order:^FS
+^FO170,75^A0N,30,30^FD${refNumber}^FS
 
-^FX --- LINEA SEPARADORA (Bajado Y+20) ---
+^FX --- LINEA ---
 ^FO30,110^GB780,2,2^FS
 
-^FX --- PRODUCTO (Bajado Y+20) ---
+^FX --- PRODUCTO ---
 ^FO30,120^A0N,45,45^FD${item.producto.toUpperCase()} (${item.size})^FS
 
-^FX --- DETALLES (Bajado Y+20) ---
-^FO30,170^A0N,25,25^FDFilling: ${item.filling}^FS
-^FO30,200^A0N,25,25^FDSauce: ${item.sauce}^FS
+^FX --- BLOQUE 1 (Filling & Sauce) ---
+^FO30,170^A0N,28,28^FDFilling:^FS
+^FO135,166^A0N,32,32^FD${item.filling.toUpperCase()}^FS
 
-^FX --- EXTRAS (Bajado Y+20) ---
-^FO30,235^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+^FO30,200^A0N,28,28^FDSauce: ${item.sauce}^FS
 
-^FX --- NO TOPPINGS (Bajado Y+20) ---
-^FO30,270^A0N,25,25^FDNO: ${exclusions}^FS
+^FX --- ESPACIO DE SEPARACION ---
 
-^FX --- FOOTER (Bajado Y+20) ---
-^FO30,370^A0N,20,20^FDCustomer Order - Thank You!^FS
+^FX --- BLOQUE 2 (INVERTIDO: Primero NO, luego EXTRAS) ---
+^FO30,255^A0N,25,25^FDNO: ${exclusions}^FS
+
+^FO30,290^A0N,25,25^FDEXTRAS: ${extrasList}^FS
+
+^FX --- FOOTER ---
+^FO30,360^A0N,20,20^FDCustomer Order - Thank You!^FS
 ^XZ`;
   }
 
@@ -310,7 +314,7 @@ function App() {
             <div className="mb-6 flex justify-between items-center border-b pb-4">
                 <h3 className="text-2xl font-bold">{productoActual}</h3>
                 <div className="flex items-center gap-2">
-                    <span className="font-bold text-gray-700">Order Ref #:</span>
+                    <span className="font-bold text-gray-700">Order Ref:</span>
                     <input 
                         type="text" 
                         value={seleccion.orderRef}
