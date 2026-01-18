@@ -5,14 +5,20 @@ import qz from 'qz-tray';
 const INGREDIENTES = {
   sizes: ["Large", "Small"],
   fillings: [
-    "Chicken", "Chicken & Chorizo", "Chicken Tinga", "Pulled Pork",
+    "Chicken", "Chicken & Chorizo", "Chorizo", "Chicken Tinga", "Pulled Pork", // <-- AQUI AGREGUÉ CHORIZO
     "Steak", "Barbacoa Beef", "Ground Beef", "Roasted Vegetables",
     "Jackfruit", "Vegan Chicken", "Mixed Beans"
   ],
   sauces: ["No Sauce", "Mild - Pico de Gallo", "Medium - Green Tomatillo", "Hot - Spicy Salsa"],
   toppings: ["Rice", "Black Beans", "Guacamole", "Cheese", "Sour Cream", "Lettuce", "Coriander", "Jalapenos"],
-  // AGREGA ESTO AL FINAL (OJO CON LA COMA ANTERIOR):
-  extras: ["Meat", "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", "Cheese", "Lettuce", "Coriander", "Jalapenos", "Sour Cream"]
+  extras: [
+    "Meat", 
+    "Vegetables", // <-- AQUI AGREGUÉ VEGETABLES DESPUES DE MEAT
+    "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", 
+    "Cheese", 
+    "Nacho Cheese", // <-- AQUI AGREGUÉ NACHO CHEESE DESPUES DE CHEESE
+    "Lettuce", "Coriander", "Jalapeños", "Sour Cream"
+  ]
 }
 
 function App() {
@@ -79,7 +85,7 @@ function App() {
     // Preparar textos
     const exclusions = item.toppings.length > 0 ? item.toppings.join(", ") : "None"; 
     const extrasList = item.extras.length > 0 ? item.extras.join(", ") : "None";
-    const refNumber = item.orderRef ? `#${item.orderRef}` : "N/A";
+    const refNumber = item.orderRef ? `${item.orderRef}` : "N/A";
     const fecha = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
     // AJUSTES REALIZADOS:
@@ -99,7 +105,7 @@ function App() {
 ^FX --- INFO & REF (Bajado Y+20) ---
 ^FO650,30^A0N,25,25^FR^FDTime: ${fecha}^FS
 
-^FO30,78^A0N,25,25^FDRef Order:^FS
+^FO30,78^A0N,25,25^FDOrder Reference:^FS
 ^FO160,78^A0N,28,28^FD${refNumber}^FS
 
 ^FX --- LINEA SEPARADORA (Bajado Y+20) ---
@@ -116,7 +122,7 @@ function App() {
 ^FO30,235^A0N,25,25^FDEXTRAS: ${extrasList}^FS
 
 ^FX --- NO TOPPINGS (Bajado Y+20) ---
-^FO30,270^A0N,25,25^FDNO TOPPINGS: ${exclusions}^FS
+^FO30,270^A0N,25,25^FDNO: ${exclusions}^FS
 
 ^FX --- FOOTER (Bajado Y+20) ---
 ^FO30,370^A0N,20,20^FDCustomer Order - Thank You!^FS
@@ -126,7 +132,7 @@ function App() {
   // --- 3. FUNCIÓN DE IMPRESIÓN REAL ---
   // --- 3. PRINT HANDLER (UPDATED FOR ZDESIGNER) ---
   // --- 3. PRINT HANDLER (NUCLEAR OPTION - DEFAULT PRINTER) ---
-  // --- 3. PRINT HANDLER (BLINDADO CONTRA DESCONEXIONES) ---
+  // --- 3. PRINT HANDLER (CON LOGICA DE CANTIDAD Y RECONEXION) ---
   const manejarImpresion = async () => {
     if (orden.length === 0) return alert("Order is empty!");
 
@@ -134,35 +140,47 @@ function App() {
       // PASO 0: VERIFICACIÓN DE SEGURIDAD (RESUCITACIÓN)
       // Si el puente se cayó, lo levantamos de nuevo aquí mismo.
       if (!qz.websocket.isActive()) {
-        console.log("Connection lost... Reconnecting...");
         await qz.websocket.connect();
         setImpresoraConectada(true);
       }
 
-      // PASO 1: BUSCAR IMPRESORA POR DEFECTO
+      // PASO 1: CALCULAR TOTAL REAL DE ETIQUETAS (Sumando cantidades)
+      let totalEtiquetas = 0;
+      orden.forEach(item => {
+        totalEtiquetas += item.cantidad;
+      });
+
+      // PASO 2: GENERAR ZPL MULTIPLICADO POR CANTIDAD
+      // Si pidieron 15 tacos, hacemos un bucle para generar 15 etiquetas
+      const datosAImprimir = [];
+      let contadorGlobal = 1;
+
+      orden.forEach((item) => {
+        for (let i = 0; i < item.cantidad; i++) {
+            // Pasamos el contador global para que salga "1/16", "2/16", etc.
+            datosAImprimir.push(generarZPL(item, contadorGlobal, totalEtiquetas));
+            contadorGlobal++;
+        }
+      });
+
+      // PASO 3: BUSCAR IMPRESORA POR DEFECTO Y ENVIAR
       const defaultPrinter = await qz.printers.getDefault();
       const config = qz.configs.create(defaultPrinter); 
 
-      const datosAImprimir = [];
-      orden.forEach((item, index) => {
-        datosAImprimir.push(generarZPL(item, index + 1, orden.length));
-      });
-
-      // PASO 2: ENVIAR
       await qz.print(config, datosAImprimir);
       
-      alert(`Sent to printer! (${defaultPrinter}) 🖨️`);
+      alert(`Sent ${totalEtiquetas} labels to printer! (${defaultPrinter}) 🖨️`);
       setOrden([]); 
 
     } catch (err) {
       console.error(err);
-      // Si el error es justamente ese de "sendData", avisamos claro:
+      // Manejo de errores de conexión (si se cerró el QZ Tray)
       if (err.message && err.message.includes("sendData")) {
         alert("Connection Error: QZ Tray seems closed. Please open the green printer icon and try again.");
       } else {
         alert("CRITICAL ERROR: " + err.message);
       }
-      // Actualizamos el estado visual para que sepan que se cayó
+      
       if (!qz.websocket.isActive()) setImpresoraConectada(false);
     }
   }
@@ -200,10 +218,20 @@ function App() {
     })
   }
 
+  // --- LOGIC: UPDATE QUANTITY ---
+  const actualizarCantidad = (id, nuevaCantidad) => {
+    if (nuevaCantidad < 1) return; // No permitir menos de 1
+    setOrden(orden.map(item => 
+        item.id === id ? { ...item, cantidad: nuevaCantidad } : item
+    ));
+  }
+
   const agregarAOrden = () => {
-    setOrden([...orden, { id: Date.now(), producto: productoActual, ...seleccion }])
+    // Al agregar, ponemos cantidad 1 por defecto
+    setOrden([...orden, { id: Date.now(), cantidad: 1, producto: productoActual, ...seleccion }])
     setModalAbierto(false)
   }
+
   const eliminarItem = (id) => setOrden(orden.filter(item => item.id !== id))
 
   return (
@@ -231,17 +259,41 @@ function App() {
 
         <div className="bg-white p-6 rounded-xl shadow-lg h-fit flex flex-col">
           <h2 className="text-xl font-bold text-gray-800 mb-4 flex justify-between">
-            Current Order <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">{orden.length} items</span>
+            Current Order 
+            <span className="bg-red-100 text-red-700 text-sm px-3 py-1 rounded-full font-bold">
+              {/* Calcula total de items sumando cantidades */}
+              {orden.reduce((acc, item) => acc + item.cantidad, 0)} items
+            </span>
           </h2>
-          <div className="flex-1 min-h-[300px] max-h-[500px] overflow-y-auto space-y-3 mb-4">
+          
+          <div className="flex-1 min-h-[300px] max-h-[500px] overflow-y-auto space-y-3 mb-4 pr-2">
              {orden.length === 0 && <div className="text-center text-gray-400 mt-10">Empty Order</div>}
              {orden.map((item) => (
                 <div key={item.id} className="border p-3 rounded bg-gray-50 relative group">
                   <button onClick={() => eliminarItem(item.id)} className="absolute top-2 right-2 text-gray-400 hover:text-red-500 font-bold">X</button>
-                  <div className="font-bold">#{item.orderRef} - {item.producto} ({item.size})</div>
+                  
+                  {/* DETALLES DEL PRODUCTO */}
+                  <div className="font-bold pr-6">
+                     <span className="text-orange-600">Ref: {item.orderRef || "N/A"}</span> - {item.producto} ({item.size})
+                  </div>
                   <div className="text-sm text-gray-600">{item.filling}, {item.sauce}</div>
                   {item.extras.length > 0 && <div className="text-xs text-green-700 font-bold">Extra: {item.extras.join(", ")}</div>}
                   {item.toppings.length > 0 && <div className="text-xs text-red-600 font-bold">No: {item.toppings.join(", ")}</div>}
+                  
+                  {/* CONTROL DE CANTIDAD (NUEVO) */}
+                  <div className="mt-3 flex items-center gap-3 bg-white w-fit px-2 py-1 rounded border">
+                    <span className="text-xs font-bold text-gray-500">Qty:</span>
+                    <button 
+                        onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}
+                        className="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300 font-bold text-lg flex items-center justify-center text-gray-700"
+                    >-</button>
+                    <span className="text-xl font-bold w-8 text-center">{item.cantidad}</span>
+                    <button 
+                        onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}
+                        className="w-8 h-8 bg-blue-100 rounded hover:bg-blue-200 font-bold text-lg flex items-center justify-center text-blue-700"
+                    >+</button>
+                  </div>
+
                 </div>
              ))}
           </div>
@@ -260,11 +312,11 @@ function App() {
                 <div className="flex items-center gap-2">
                     <span className="font-bold text-gray-700">Order Ref #:</span>
                     <input 
-                        type="number" 
+                        type="text" 
                         value={seleccion.orderRef}
                         onChange={(e) => setSeleccion({...seleccion, orderRef: e.target.value})}
-                        className="border-2 border-gray-300 rounded-lg p-2 w-24 text-2xl font-bold text-center focus:border-orange-500 outline-none"
-                        placeholder="0"
+                        className="border-2 border-gray-300 rounded p-1 w-28 text-xl font-bold text-center uppercase"
+                        placeholder="Name/No"
                     />
                 </div>
             </div>
