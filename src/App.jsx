@@ -17,7 +17,7 @@ const INGREDIENTES = {
     "Rice", "Black Beans", "Mild Salsa", "Medium Salsa", "Spicy Sauce", "Guacamole", 
     "Cheese", 
     "Nacho Cheese", // <-- AQUI AGREGUÉ NACHO CHEESE DESPUES DE CHEESE
-    "Lettuce", "Coriander", "Jalapeños", "Sour Cream"
+    "Lettuce", "Coriander", "Jalapeños", "Sour Cream","Vegan Cheese"
   ]
 }
 
